@@ -26,7 +26,10 @@ int commit_transaction(struct db_context_t *dbc)
     {
       LOG_ERROR_MESSAGE("COMMIT TRANSACTION;\nsqlite reports: %d %s", sqlite3_errcode(dbc->db), sqlite3_errmsg(dbc->db));
       return ERROR;
-    }
+    } else {
+	//	LOG_ERROR_MESSAGE("COMMIT TRANSACTION successfully\n");
+	
+	}
 	dbc->inTransaction = 0;
 #ifdef DEBUG_QUERY
     LOG_ERROR_MESSAGE("COMMIT TRANSACTION;\n");
@@ -40,8 +43,13 @@ int commit_transaction(struct db_context_t *dbc)
 int _connect_to_db(struct db_context_t *dbc)
 {
 	int rc;
+	// pxw
+	LOG_ERROR_MESSAGE("pxw : _connect_to_db(), global sqlite_dbname = %s).", sqlite_dbname);
 
 	rc = sqlite3_open(sqlite_dbname, &dbc->db);
+    LOG_ERROR_MESSAGE("pxw : _connect_to_db(): sqlite3_open() with rc=%d, db addr=%d).", rc, &dbc->db);
+	//TODO
+	//pxw: 第一个打开db conn的进程初始化lock manager
 	dbc->inTransaction = 0;
 	if (rc) {
         LOG_ERROR_MESSAGE("Connection to database '%s' failed (error code %d).", sqlite_dbname, rc);
@@ -54,23 +62,32 @@ int _connect_to_db(struct db_context_t *dbc)
 
 /* Disconnect from the database and free the connection handle. */
 int _disconnect_from_db(struct db_context_t *dbc)
-{
+{   
+	//TODO
+	//pxw: 让最后一个关闭db conn的进程回收lock manager的资源
+	//要不要添加sqlite3_shutdow？
 	sqlite3_close(dbc->db);
+	LOG_ERROR_MESSAGE("pxw : _disconnect_from_db().");
+	//sqlite3_shutdown();
 	return OK;
 }
 
 int _db_init(char * _dbname)
 {
+	// pxw
+    //LOG_ERROR_MESSAGE("pxw : _db_init(dbname = %s), global sqlite_dbname = %s).", _dbname, sqlite_dbname);
 	/* Copy values only if it's not NULL. */
-	if (_dbname != NULL) {
+/*	if (_dbname != NULL) {
 		strcpy(sqlite_dbname, _dbname);
 	}
+*/
+	strcpy(sqlite_dbname,"/home/pxw/osdldbt-dbt2/test_pxw/dbt2-w1");
 	return OK;
 }
 
 int rollback_transaction(struct db_context_t *dbc)
 {
-  LOG_ERROR_MESSAGE("ROLLBACK INITIATED\n");
+ // LOG_ERROR_MESSAGE("ROLLBACK INITIATED\n");
 
   if (dbc->inTransaction)
   {
@@ -78,7 +95,10 @@ int rollback_transaction(struct db_context_t *dbc)
     {
       LOG_ERROR_MESSAGE("ROLLBACK TRANSACTION;\nsqlite reports: %d %s", sqlite3_errcode(dbc->db), sqlite3_errmsg(dbc->db));
       return ERROR;
-    }
+    } else {
+	//	LOG_ERROR_MESSAGE("ROLLBACK successfully\n");
+	
+	}
 	dbc->inTransaction = 0;
   }
 
@@ -94,6 +114,7 @@ int dbt2_sql_execute(struct db_context_t *dbc, char * query, struct sql_result_t
 
   if (!dbc->inTransaction)
   {
+     // LOG_ERROR_MESSAGE("%s: BEGIN TRANSACTION;\n", query_name);
     if (sqlite3_exec(dbc->db, "BEGIN TRANSACTION;", NULL, NULL, NULL) != SQLITE_OK)
     {
       LOG_ERROR_MESSAGE("%s: BEGIN TRANSACTION;\nsqlite reports: %d %s", query_name, sqlite3_errcode(dbc->db), sqlite3_errmsg(dbc->db));

@@ -141,18 +141,19 @@ int main(int argc, char *argv[])
 	init_logging();
 
 	printf("opening %d connection(s) to %s...\n", db_connections, sname);
-	if (startup() != OK) {
+	if (startup() != OK) { //创建client worker线程
 		LOG_ERROR_MESSAGE("startup() failed\n");
 		printf("startup() failed\n");
 		return 4;
 	}
 	printf("client has started\n");
 
-	printf("%d DB worker threads have started\n", db_connections);
+	printf("%d DB worker threads have started\n", db_connections); // pxw
 	fflush(stdout);
 	create_pid_file();
 
 	/* Wait for command line input. */
+	//pxw: 输入什么？
 	do {
 		if (force_sleep == 1) {
 			sleep(600);
@@ -320,7 +321,7 @@ int parse_command(char *command)
 		printf("status\n");
 		printf("exit or quit\n");
 	} else {
-		printf("unknown command: %s\n", command);
+		//printf("unknown command: %s\n", command); //不打印
 	}
 	return OK;
 }
@@ -341,7 +342,7 @@ int startup()
 		LOG_ERROR_MESSAGE("init_transaction_queue() failed");
 		return ERROR;
 	}
-	ret = pthread_create(&tid, NULL, &init_listener, &sockfd);
+	ret = pthread_create(&tid, NULL, &init_listener, &sockfd); //一个线程负责接收来自driver的请求
 	if (ret != 0) {
 		LOG_ERROR_MESSAGE(
 			"pthread_create() error with init_listener()");
@@ -352,7 +353,7 @@ int startup()
 	}
 	printf("listening to port %d\n", port);
 
-	if (db_threadpool_init() != OK) {
+	if (db_threadpool_init() != OK) { //创建conn个线程处理请求（1,2,3,4）
 		LOG_ERROR_MESSAGE("db_thread_pool_init() failed");
 		return ERROR;
 	}

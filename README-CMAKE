@@ -1,1 +1,1 @@
-cpack -D CPACK_INSTALLED_DIRECTORIES="`pwd`;/"
+cpack -D CPACK_INSTALLED_DIRECTRIES="`pwd`;/"

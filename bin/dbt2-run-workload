@@ -645,6 +645,7 @@ while [ ${END} -lt ${WAREHOUSES} ]; do
 done
 
 # Sleep long enough for all the client database connections to be established.
+# 休眠足够长时间等待client db之间的连接建立
 SLEEPYTIME=${W_CHUNK}
 SLEEPYTIME=`expr ${SLEEPYTIME} \* ${SLEEPY}`
 SLEEPYTIME=`expr ${SLEEPYTIME} / 1000`

@@ -25,6 +25,7 @@ int generate_integrity_data(int w_id, struct integrity_t *data);
 extern int mode_altered;
 
 /* This function generates data for all transactions except Stock-Level. */
+//生成具体事务数据
 int generate_input_data(int type, void *data, int w_id)
 {
 	switch (type) {
@@ -61,13 +62,13 @@ int generate_delivery_data(int w_id, struct delivery_t *data)
 {
 	bzero(data, sizeof(struct delivery_t));
 	data->w_id = w_id;
-	data->o_carrier_id = get_random(O_CARRIER_ID_MAX) + 1;
+	data->o_carrier_id = get_random(O_CARRIER_ID_MAX) + 1; //random 10
 
 	return OK;
 }
 
 /* Clause 2.4.1 */
-int generate_new_order_data(int w_id, struct new_order_t *data)
+int generate_new_order_data(int w_id, struct new_order_t *data) //o_id在输出？
 {
 	int i;
 

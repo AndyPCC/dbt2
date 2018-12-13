@@ -32,7 +32,7 @@ struct transaction_queue_node_t *get_node()
         struct transaction_queue_node_t *node;
 
         sem_wait(&free_count);
-        pthread_mutex_lock(&mutex_node);
+        pthread_mutex_lock(&mutex_node); //加锁
         node = node_head;
         if (node_head == NULL) {
                 /* This should never happen... */
@@ -42,7 +42,7 @@ struct transaction_queue_node_t *get_node()
         } else {
                 node_head = node_head->next;
         }
-        pthread_mutex_unlock(&mutex_node);
+        pthread_mutex_unlock(&mutex_node); //放锁
 
         return node;
 }
@@ -123,7 +123,7 @@ void *listener_worker(void *data)
                 (struct transaction_queue_node_t *) data;
 
         while (!exiting) {
-                rc = receive_transaction_data(node->s, &node->client_data);
+                rc = receive_transaction_data(node->s, &node->client_data); //接收driver发来数据
                 if (rc == ERROR_SOCKET_CLOSED) {
 /*
                         LOG_ERROR_MESSAGE("exiting...");
@@ -138,8 +138,8 @@ void *listener_worker(void *data)
                 }
 
                 /* Queue up the transaction data to be processed. */
-                enqueue_transaction(node);
-                node = get_node();
+                enqueue_transaction(node); //把请求压入队列
+                node = get_node();//当前的node head
                 if (node == NULL) {
                         /*
                          * While get_node() should return a NULL from

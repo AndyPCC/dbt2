@@ -69,9 +69,12 @@ extern char dbt2_drizzle_host[128];
 extern char dbt2_drizzle_socket[256];
 #endif /* LIBDRIZZLE */
 
+//TODO
 void *db_worker(void *data)
 {
         int id = *((int *) data); /* Whoa... */
+		//int tt =(id+1)*2;
+		//sleep(tt);
 #ifndef STANDALONE
         int length;
 #endif /* NOT STANDALONE */
@@ -102,21 +105,22 @@ void *db_worker(void *data)
 #endif /* LIBDRIZZLE */
 
 #ifdef LIBSQLITE
-		db_init(sname);
+		db_init(sname); //不执行这里
 #endif /* LIBSQLITE */
 
-        if (!exiting && connect_to_db(&dbc) != OK) {
+        if (!exiting && connect_to_db(&dbc) != OK) { //执行sqlite3_open()
                 LOG_ERROR_MESSAGE("connect_to_db() error, terminating program");
                 printf("cannot connect to database(see details in error.log file, exiting...\n");
                 exit(1);
         }
 
+/************************************db worker开始*********************************************/
         while (!exiting) {
                 /*
                  * I know this loop will prevent the program from exiting
                  * because of the dequeue...
                  */
-                node = dequeue_transaction();
+                node = dequeue_transaction(); //取出事务
                 if (node == NULL) {
                         LOG_ERROR_MESSAGE("dequeue was null");
                         continue;
@@ -126,10 +130,10 @@ void *db_worker(void *data)
                         perror("gettimeofday");
                 }
 #endif /* STANDALONE */
-                node->client_data.status =
+                node->client_data.status =  //处理事务
                         process_transaction(node->client_data.transaction,
                         &dbc, &node->client_data.transaction_data);
-                if (node->client_data.status == ERROR) {
+                if (node->client_data.status == ERROR) {//如果事务出错，log后继续执行下一个事务
                         LOG_ERROR_MESSAGE("process_transaction() error on %s",
                                 transaction_name[
                                 node->client_data.transaction]);
@@ -139,7 +143,7 @@ void *db_worker(void *data)
                          */
                 }
 #ifdef STANDALONE
-                if (gettimeofday(&rt1, NULL) == -1) {
+                if (gettimeofday(&rt1, NULL) == -1) { //不执行
                         perror("gettimeofday");
                 }
                 response_time = difftimeval(rt1, rt0);
@@ -152,7 +156,7 @@ void *db_worker(void *data)
 #endif /* STANDALONE */
 
 #ifndef STANDALONE
-                length = send_transaction_data(node->s, &node->client_data);
+                length = send_transaction_data(node->s, &node->client_data); //发送给driver
                 if (length == ERROR) {
                         LOG_ERROR_MESSAGE("send_transaction_data() error");
                         /*
@@ -163,11 +167,11 @@ void *db_worker(void *data)
 #endif /* NOT STANDALONE */
                 pthread_mutex_lock(&mutex_transaction_counter[REQ_EXECUTING][
                         node->client_data.transaction]);
-                --transaction_counter[REQ_EXECUTING][
+                --transaction_counter[REQ_EXECUTING][  //执行的事务完成，-1
                         node->client_data.transaction];
                 pthread_mutex_unlock(&mutex_transaction_counter[REQ_EXECUTING][
                         node->client_data.transaction]);
-                recycle_node(node);
+                recycle_node(node); //listener 加入node时
 
                 /* Keep track of how many transactions this thread has done. */
                 ++worker_count[id];
@@ -176,7 +180,9 @@ void *db_worker(void *data)
                 time(&last_txn[id]);
         }
 
-        /* Disconnect from the database. */
+/************************************db worker结束*********************************************/
+        
+		/* Disconnect from the database. */
         disconnect_from_db(&dbc);
 
         sem_wait(&db_worker_count);
@@ -184,6 +190,7 @@ void *db_worker(void *data)
         return NULL;        /* keep compiler quiet */
 }
 
+//TODO
 int db_threadpool_init()
 {
         struct timespec ts, rem;
@@ -203,7 +210,7 @@ int db_threadpool_init()
 
         last_txn = (time_t *) malloc(sizeof(time_t) * db_connections);
 
-        for (i = 0; i < db_connections; i++) {
+        for (i = 0; i < db_connections; i++) { //在同一个进程中创建多个client线程与db建立连接
                 int ret;
                 pthread_t tid;
                 pthread_attr_t attr;
@@ -227,7 +234,7 @@ int db_threadpool_init()
                         LOG_ERROR_MESSAGE("could not set pthread stack size");
                         return ERROR;
                 }
-                ret = pthread_create(&tid, &attr, &db_worker, &i);
+                ret = pthread_create(&tid, &attr, &db_worker, &i); //启动与db连接的worker thread
                 if (ret != 0) {
                         LOG_ERROR_MESSAGE("error creating db thread");
                         if (ret == EAGAIN) {

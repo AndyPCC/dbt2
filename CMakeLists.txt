@@ -117,10 +117,18 @@ ELSEIF (DBMS STREQUAL "sqlite")
                 src/nonsp/dbc_payment.c src/nonsp/dbc_order_status.c
                 src/nonsp/dbc_delivery.c src/nonsp/dbc_stock_level.c
                 src/nonsp/dbc_integrity.c src/nonsp/dbc_nonsp.c)
-        EXECUTE_PROCESS(COMMAND ${PKG_CONFIG} --cflags sqlite3 OUTPUT_VARIABLE
-                SQLITE_CFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
-        EXECUTE_PROCESS(COMMAND ${PKG_CONFIG} --libs sqlite3 OUTPUT_VARIABLE
-                DB_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)
+		EXECUTE_PROCESS(COMMAND  ${PKG-CONFIG} --cflags sqlite3 
+			    OUTPUT_VARIABLE SQLITE_CFLAGS 
+				OUTPUT_STRIP_TRAILING_WHITESPACE)
+			SET(SQLITE_CFLAGS "-I/usr/local/include")
+			MESSAGE(STATUS "1111 ${SQLITE_CFLAGS}")
+
+		EXECUTE_PROCESS(COMMAND ${PKG-CONFIG} --libs sqlite3 
+			    OUTPUT_VARIABLE DB_LIBS 
+				OUTPUT_STRIP_TRAILING_WHITESPACE)
+			SET(DB_LIBS "-L/usr/local/lib -lsqlite3")
+			MESSAGE(STATUS "2222 ${DB_LIBS}") 
+
         SET(DBCFLAGS "-DLIBSQLITE ${SQLITE_CFLAGS}")
         SET(DB_SCRIPTS bin/sqlite/dbt2-sqlite-build-db
                 bin/sqlite/dbt2-sqlite-plans bin/sqlite/dbt2-sqlite-start-db
@@ -243,7 +251,7 @@ IF (NEED_LIBNSL)
 ENDIF (NEED_LIBNSL)
 
 #
-# Set compiler flags.
+# Set compiler flags.设置编译选项
 #
 
 SET(CMAKE_C_FLAGS "-g -Wall -Isrc/include ${LFS_CFLAGS}")
@@ -251,14 +259,14 @@ SET(CMAKE_C_FLAGS "-g -Wall -Isrc/include ${LFS_CFLAGS}")
 SET_SOURCE_FILES_PROPERTIES(src/db_threadpool.c src/db.c src/client.c
         src/transaction_test.c src/common.c COMPILE_FLAGS "${DBCFLAGS}")
 SET_SOURCE_FILES_PROPERTIES(${DB_SOURCE} COMPILE_FLAGS "${DBCFLAGS}")
+MESSAGE(STATUS "3333 ${DBCFLAGS}")
 
 #
-# Set linker flags.
+# Set linker flags.设置链接选项
 #
 
-SET_TARGET_PROPERTIES(${DBT2_CLIENT} PROPERTIES LINK_FLAGS
-        "-lm ${DB_LIBS} -lpthread")
-SET_TARGET_PROPERTIES(${DBT2_DATAGEN} PROPERTIES LINK_FLAGS -lm)
+SET_TARGET_PROPERTIES(${DBT2_CLIENT} PROPERTIES LINK_FLAGS	"-lm -lpthread ${DB_LIBS} ")
+SET_TARGET_PROPERTIES(${DBT2_DATAGEN} PROPERTIES LINK_FLAGS "-lm")
 SET_TARGET_PROPERTIES(${DBT2_DRIVER} PROPERTIES LINK_FLAGS "-lm -lpthread")
 SET_TARGET_PROPERTIES(${DBT2_TXN_TEST} PROPERTIES LINK_FLAGS "-lm ${DB_LIBS}")
 

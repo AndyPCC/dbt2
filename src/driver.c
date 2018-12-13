@@ -304,6 +304,7 @@ int start_driver()
 			(double) terminals_per_warehouse *
 			(double) (w_id_max - w_id_min));
 
+	//继续在driver.txt中打印
 	stop_time = time(NULL) + duration + threads_start_time;
 	printf("driver is starting to ramp up at time %d\n", (int) time(NULL));
 	printf("driver will ramp up in  %d seconds\n", threads_start_time);
@@ -316,7 +317,7 @@ int start_driver()
 				malloc(sizeof(pthread_t) * terminals_per_warehouse);
 	}
 
-	for (j = 0; j < terminals_per_warehouse; j++) {
+	for (j = 0; j < terminals_per_warehouse; j++) { //每个仓库10个terminals）
 		for (i = w_id_min; i < w_id_max + 1; i += spread) {
 			int ret;
 			pthread_attr_t attr;
@@ -326,7 +327,7 @@ int start_driver()
 			tc = (struct terminal_context_t *)
 					malloc(sizeof(struct terminal_context_t));
 			tc->w_id = i;
-			tc->d_id = j + 1;
+			tc->d_id = j + 1; //线程序号
 			if (pthread_attr_init(&attr) != 0) {
 				LOG_ERROR_MESSAGE("could not init pthread attr: %d",
 						(i + j + 1) * terminals_per_warehouse);
@@ -337,7 +338,7 @@ int start_driver()
 						(i + j + 1) * terminals_per_warehouse);
 				return ERROR;
 			}
-			ret = pthread_create(&g_tid[i][j], &attr, &terminal_worker,
+			ret = pthread_create(&g_tid[i][j], &attr, &terminal_worker, //每个terminal worker工作routine
 					(void *) tc);
 			if (ret != 0) {
 				perror("pthread_create");
@@ -382,11 +383,11 @@ int start_driver()
 			break;
 		}
 	}
-	printf("terminals started...\n");
+	printf("terminals started...\n"); //打印
 
 	/* Note that the driver has started up all threads in the log. */
 	pthread_mutex_lock(&mutex_mix_log);
-	fprintf(log_mix, "%d,START,,,\n", (int) time(NULL));
+	fprintf(log_mix, "%d,START,,,\n", (int) time(NULL)); //已经启动了所有terminal worker线程
 	fflush(log_mix);
 	pthread_mutex_unlock(&mutex_mix_log);
 
@@ -409,11 +410,11 @@ int start_driver()
 			break;
 		}
 	}
-	printf("driver is exiting normally\n");
+	printf("driver is exiting normally\n"); //打印
 	return OK;
 }
 
-void *terminal_worker(void *data)
+void *terminal_worker(void *data)  //每个terminal线程的工作routine
 {
 #ifndef STANDALONE
 	int length;
@@ -470,6 +471,7 @@ void *terminal_worker(void *data)
 	} else {
 		local_seed = seed;
 	}
+	//打印进程号，线程号， 随机种子？
 	printf("seed for %d:%x : %u\n",
 			(unsigned int) pid, (unsigned int) tid, local_seed);
 	fflush(stdout);
@@ -492,6 +494,8 @@ void *terminal_worker(void *data)
 #endif /* LIBDRIZZLE */
 #ifdef LIBSQLITE
 	db_init(sname);
+	printf("pxw： 2222\n");
+	printf("pxw： connect to DB: %s\n", sname);
 #endif /* LIBSQLITE */
 
 	if (!exiting && connect_to_db(&dbc) != OK) {
@@ -501,27 +505,32 @@ void *terminal_worker(void *data)
 	}
 #else
 	/* Connect to the client program. */
-	sockfd = connect_to_client(hostname, client_port);
+	sockfd = connect_to_client(hostname, client_port); //走这里
+	printf("pxw: sockfd = %d\n", sockfd);
 	if (sockfd < 1) {
 		LOG_ERROR_MESSAGE( "connect_to_client() failed, thread exiting...");
 		printf("connect_to_client() failed, thread exiting...\n");
 		pthread_exit(NULL);
 	}
 #endif /* STANDALONE */
+	//db_init(sname);
+	//printf("pxw： 2222\n");
+	//printf("pxw： connect to DB: %s\n", sname);
 
-	do {
+	do { //开始
 		if (mode_altered == 1) {
 			/*
 			 * Determine w_id and d_id for the client per
 			 * transaction.
 			 */
-			tc->w_id = w_id_min + get_random(w_id_max - w_id_min + 1);
-			tc->d_id = get_random(table_cardinality.districts) + 1;
+			tc->w_id = w_id_min + get_random(w_id_max - w_id_min + 1); //事务的warehouse id
+			tc->d_id = get_random(table_cardinality.districts) + 1; //事务的district id
 		}
 
 		/*
 		 * Determine which transaction to execute, minimum keying time,
 		 * and mean think time.
+		 * 决定执行哪一种事务，以及该事务的keying，thinking time
 		 */
 		threshold = get_percentage();
 		if (threshold < transaction_mix.new_order_threshold) {
@@ -558,22 +567,23 @@ void *terminal_worker(void *data)
 #endif /* DEBUG */
 
 		/* Generate the input data for the transaction. */
+		/* 生成事务的输入数据 */
 		if (client_data.transaction != STOCK_LEVEL) {
-			generate_input_data(client_data.transaction,
+			generate_input_data(client_data.transaction, //如果不是STOCK LEVEL 事务
 					&client_data.transaction_data, tc->w_id);
 		} else {
-			generate_input_data2(client_data.transaction,
+			generate_input_data2(client_data.transaction,//如果是STOCK LEVEL事务
 					&client_data.transaction_data, tc->w_id, tc->d_id);
 		}
 
-		/* Keying time... */
+		/* Keying time...键入事件（0） */
 		pthread_mutex_lock(
 				&mutex_terminal_state[KEYING][client_data.transaction]);
 		++terminal_state[KEYING][client_data.transaction];
 		pthread_mutex_unlock(
 				&mutex_terminal_state[KEYING][client_data.transaction]);
 		if (time(NULL) < stop_time) {
-			sleep(keying_time);
+			sleep(keying_time);//休眠
 		} else {
 			break;
 		}
@@ -590,7 +600,7 @@ void *terminal_worker(void *data)
 		pthread_mutex_unlock(
 				&mutex_terminal_state[EXECUTING][client_data.transaction]);
 		/* Execute transaction and record the response time. */
-		if (gettimeofday(&rt0, NULL) == -1) {
+		if (gettimeofday(&rt0, NULL) == -1) { //开始时间
 			perror("gettimeofday");
 		}
 #ifdef STANDALONE
@@ -602,6 +612,7 @@ void *terminal_worker(void *data)
 			LOG_ERROR_MESSAGE("Cannot get a transaction node.\n");
 		}
 */
+		// 处理事务数据（不执行）
 		rc = process_transaction(node->client_data.transaction, &dbc,
 				&node->client_data.transaction_data);
 		if (rc == ERROR) {
@@ -609,11 +620,12 @@ void *terminal_worker(void *data)
 					transaction_name[node->client_data.transaction]);
 		}
 #else /* STANDALONE */
-		length = send_transaction_data(sockfd, &client_data);
-		length = receive_transaction_data(sockfd, &client_data);
+		//程序走这里。。
+		length = send_transaction_data(sockfd, &client_data); //发送事务
+		length = receive_transaction_data(sockfd, &client_data); //接收返回
 		rc = client_data.status;
 #endif /* STANDALONE */
-		if (gettimeofday(&rt1, NULL) == -1) {
+		if (gettimeofday(&rt1, NULL) == -1) {//结束时间
 			perror("gettimeofday");
 		}
 		response_time = difftimeval(rt1, rt0);
@@ -625,16 +637,18 @@ void *terminal_worker(void *data)
 		} else if (rc == ERROR) {
 			code = 'E';
 		}
-		fprintf(log_mix, "%d,%c,%c,%f,%lld\n", (int) time(NULL),
-				transaction_short_name[client_data.transaction], code,
-				response_time, (long long) pthread_self());
+		//TODO
+		//把事务执行结果写入mix.log
+		fprintf(log_mix, "%d,%c,%c,%f,%lld\n", (int) time(NULL),//当前时间
+				transaction_short_name[client_data.transaction], code,//事务类型，返回码
+				response_time, (long long) pthread_self());//返回时间，线程号
 		fflush(log_mix);
 		pthread_mutex_unlock(&mutex_mix_log);
 		pthread_mutex_lock(&mutex_terminal_state[EXECUTING][client_data.transaction]);
 		--terminal_state[EXECUTING][client_data.transaction];
 		pthread_mutex_unlock(&mutex_terminal_state[EXECUTING][client_data.transaction]);
 
-		/* Thinking time... */
+		/* Thinking time...用户思考时间 */
 		pthread_mutex_lock(&mutex_terminal_state[THINKING][client_data.transaction]);
 		++terminal_state[THINKING][client_data.transaction];
 		pthread_mutex_unlock(&mutex_terminal_state[THINKING][client_data.transaction]);
@@ -657,14 +671,14 @@ void *terminal_worker(void *data)
 		pthread_mutex_lock(&mutex_terminal_state[THINKING][client_data.transaction]);
 		--terminal_state[THINKING][client_data.transaction];
 		pthread_mutex_unlock(&mutex_terminal_state[THINKING][client_data.transaction]);
-	} while (time(NULL) < stop_time);
+	} while (time(NULL) < stop_time); //时间到了，结束程序
 
 #ifdef STANDALONE
 	/*recycle_node(node);*/
 #endif /* STANDALONE */
 	/* Note when each thread has exited. */
 	pthread_mutex_lock(&mutex_mix_log);
-	fprintf(log_mix, "%d,TERMINATED,,,%d\n", (int) time(NULL),
+	fprintf(log_mix, "%d,TERMINATED,,,%d\n", (int) time(NULL), //线程退出
 			(int) pthread_self());
 	fflush(log_mix);
 	pthread_mutex_unlock(&mutex_mix_log);

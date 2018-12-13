@@ -9,6 +9,7 @@
 
 
 #include <nonsp_delivery.h>
+//#define DEBUG_QUERY 1
 
 int execute_delivery(struct db_context_t *dbc, struct delivery_t *data)
 {
@@ -55,7 +56,9 @@ int delivery(struct db_context_t *dbc, struct delivery_t *data, char ** vals, in
           LOG_ERROR_MESSAGE("DELIVERY_1: %s\n",query);
 #endif
           if (dbt2_sql_execute(dbc, query, &result, "DELIVERY_1") && result.result_set)
-          { 
+          {/* deliver的order id从select语句获得：
+			select no_o_id from new_order where no_w_id = xx, and no_d_id = xxx
+		    */ 
             dbt2_sql_fetchrow(dbc, &result);
             vals[NO_O_ID]= (char *)dbt2_sql_getvalue(dbc, &result, 0);  //NO_O_ID
             dbt2_sql_close_cursor(dbc, &result);

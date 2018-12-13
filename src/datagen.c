@@ -1369,6 +1369,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Parse command line arguments. */
+	// pxw: sqlite3的 db格式是 mysql
 	while (1) {
 		int option_index = 0;
 		static struct option long_options[] = {

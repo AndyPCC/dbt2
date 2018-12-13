@@ -9,6 +9,7 @@
 
 
 #include <nonsp_new_order.h>
+//#define DEBUG_QUERY 1
 
 const char s_dist[10][11] = {
         "s_dist_01", "s_dist_02", "s_dist_03", "s_dist_04", "s_dist_05",
@@ -118,6 +119,8 @@ int  new_order(struct db_context_t *dbc, struct new_order_t *data, char ** vals,
 
           vals[D_TAX]= dbt2_sql_getvalue(dbc, &result, 0);       //D_TAX
           vals[D_NEXT_O_ID]= dbt2_sql_getvalue(dbc, &result, 1); //D_NEXT_O_ID
+
+         // LOG_ERROR_MESSAGE("current_o_id =  %s\n", vals[D_NEXT_O_ID]);
           dbt2_sql_close_cursor(dbc, &result);          
         }
         else //error
@@ -156,6 +159,7 @@ int  new_order(struct db_context_t *dbc, struct new_order_t *data, char ** vals,
           return 13;
         }
 
+	//o_next_o_id就是新插入的new_order_id, 来自于new_order_3的查询
 	sprintf(query, NEW_ORDER_5, vals[D_NEXT_O_ID] , w_id, d_id);
 
 #ifdef DEBUG_QUERY
@@ -163,9 +167,11 @@ int  new_order(struct db_context_t *dbc, struct new_order_t *data, char ** vals,
 #endif
         if (!dbt2_sql_execute(dbc, query, &result, "NEW_ORDER_5"))
         {
+          //LOG_ERROR_MESSAGE("NEW_ORDER_5 query: %s\n", query);
           return 14;
         }
 
+		//o_next_o_id就是新插入的new_order_id
 	sprintf(query, NEW_ORDER_6, vals[D_NEXT_O_ID] , d_id, w_id, c_id, o_ol_cnt, o_all_local);
 
 #ifdef DEBUG_QUERY
@@ -178,7 +184,7 @@ int  new_order(struct db_context_t *dbc, struct new_order_t *data, char ** vals,
 
         rc=0;
 
-	for (i = 0; i < o_ol_cnt; i++) 
+	for (i = 0; i < o_ol_cnt; i++) // new order 7-10执行o_ol_cnt次 
         {
           sprintf(query, NEW_ORDER_7, ol_i_id[i]);
 

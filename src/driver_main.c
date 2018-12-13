@@ -187,6 +187,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Double check database table cardinality. */
+	// pxw: driver.txt文件开始：
 	printf("\n");
 	printf("database table cardinalities:\n");
 	printf("warehouses = %d\n", table_cardinality.warehouses);
@@ -251,7 +252,7 @@ int main(int argc, char *argv[])
 	   return 1;
 	}
 
-	start_driver();
+	start_driver(); //开始
 
 	return 0;
 }

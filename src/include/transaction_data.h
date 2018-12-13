@@ -20,6 +20,7 @@ struct delivery_t
 	/* Input data. */
 	int w_id;
 	int o_carrier_id;
+	// o_id是？
 };
 
 struct no_order_line_t
@@ -45,7 +46,7 @@ struct new_order_t
 	struct no_order_line_t order_line[O_OL_CNT_MAX];
 
 	/* Output data. */
-	int o_id;
+	int o_id; //？
 	double total_amount;
 	double w_tax;
 	double d_tax;

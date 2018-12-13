@@ -47,21 +47,22 @@ command_exec()
 load_tables()
 {
 
-TABLES="customer district history item new_order order_line orders stock warehouse"
+#TABLES="customer district history item new_order order_line orders stock warehouse"
 
-for TABLE in $TABLES ; do
+#for TABLE in $TABLES ; do
 
-  echo "Loading table $TABLE"
+ # echo "Loading table $TABLE"
 
-  if [ "$TABLE" == "orders" ]; then
-    FN="order"
-  else
-    FN="$TABLE"
-  fi
+  #if [ "$TABLE" == "orders" ]; then
+  #  FN="order"
+  #else
+  #  FN="$TABLE"
+  #fi
 
-  command_exec "$SQLITE -separator \"	\" $DB_NAME \".import $DB_PATH/$FN.data $TABLE\""
+  #command_exec "gdb --args $SQLITE -separator \"	\" $DB_NAME \".import $DB_PATH/$FN.data $TABLE\""
+  command_exec "gdb --args $SQLITE -separator \"	\" $DB_NAME \".import $DB_PATH/warehouse.data warehouse\""
 
-done
+#done
 
 }
 
@@ -412,25 +413,25 @@ if [ "$DB_SCHEME" != "OPTIMIZED" -a "$DB_SCHEME" != "ORIG" ]; then
   exit 1
 fi
 
-if [ ${GENERATE_DATAFILE} -eq 1 ]; then
+#if [ ${GENERATE_DATAFILE} -eq 1 ]; then
 	#
 	# Generate data files.
 	#
-	dbt2-datagen -d ${DB_PATH} -w ${WAREHOUSES} --mysql || exit 1
-fi
+#	dbt2-datagen -d ${DB_PATH} -w ${WAREHOUSES} --mysql || exit 1
+#fi
 
 echo ""
 echo "Loading of DBT2 dataset located in $DB_PATH to database $DB_NAME."
 echo ""
 echo "DB_SCHEME:      $DB_SCHEME"
 
-if [ -f "$DB_NAME" ]; then
-	command_exec "rm \"$DB_NAME\" "
-fi
+#if [ -f "$DB_NAME" ]; then
+#	command_exec "rm \"$DB_NAME\" "
+#fi
 
 # Create tables
-echo ""
-create_tables
+#echo ""
+#create_tables
 
 # Load tables
 echo ""

@@ -148,7 +148,7 @@ int process_transaction(int transaction, struct db_context_t *dbc,
 		break;
 	case NEW_ORDER:
 		td->new_order.o_all_local = 1;
-		for (i = 0; i < td->new_order.o_ol_cnt; i++) {
+		for (i = 0; i < td->new_order.o_ol_cnt; i++) { //o_ol_cnt??
 			if (td->new_order.order_line[i].ol_supply_w_id !=
 					td->new_order.w_id) {
 				td->new_order.o_all_local = 0;
@@ -187,9 +187,9 @@ int process_transaction(int transaction, struct db_context_t *dbc,
 
 	/* Commit or rollback the transaction. */
 	if (rc == OK) {
-		status = commit_transaction(dbc);
+		status = commit_transaction(dbc); //如果执行成功commit
 	} else {
-		status = rollback_transaction(dbc);
+		status = rollback_transaction(dbc); //执行失败rollback
 	}
 
 	return status;

@@ -64,7 +64,7 @@ struct transaction_queue_node_t *dequeue_transaction()
 
 	sem_wait(&queue_length);
 	pthread_mutex_lock(&mutex_queue);
-	node = transaction_head;
+	node = transaction_head; //获得事务队列的head
 	if (transaction_head == NULL) {
 		pthread_mutex_unlock(&mutex_queue);
 		return NULL;
@@ -97,7 +97,7 @@ struct transaction_queue_node_t *dequeue_transaction()
 /* Enqueue to the tail. */
 int enqueue_transaction(struct transaction_queue_node_t *node)
 {
-	pthread_mutex_lock(&mutex_transaction_counter[REQ_QUEUED][
+	pthread_mutex_lock(&mutex_transaction_counter[REQ_QUEUED][ //transaction_counter[0][5]存储五种事务的个数
 		node->client_data.transaction]);
 	++transaction_counter[REQ_QUEUED][node->client_data.transaction];
 	pthread_mutex_unlock(&mutex_transaction_counter[REQ_QUEUED][
